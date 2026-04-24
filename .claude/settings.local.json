@@ -3,7 +3,14 @@
     "allow": [
       "Bash(git init *)",
       "Bash(git config *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(curl -L \"https://github.com/skywind3000/ECDICT/releases/latest\" -o /tmp/ecdict_releases.html)",
+      "Bash(chmod +x *)",
+      "Bash(python download_ecdict.py)",
+      "Bash(python setup_sqlite.py)"
     ]
   }
 }
