@@ -10,7 +10,12 @@
       "Bash(curl -L \"https://github.com/skywind3000/ECDICT/releases/latest\" -o /tmp/ecdict_releases.html)",
       "Bash(chmod +x *)",
       "Bash(python download_ecdict.py)",
-      "Bash(python setup_sqlite.py)"
+      "Bash(python setup_sqlite.py)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(git tag *)",
+      "Bash(git branch *)",
+      "Bash(curl -L https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar)"
     ]
   }
 }
