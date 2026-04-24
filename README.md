@@ -1,58 +1,61 @@
-# HyperDict - 超级词典
+# HyperDict
 
 <div align="center">
-
-![HyperDict Logo](https://img.shields.io/badge/HyperDict-超级词典-6750A4?style=for-the-badge)
 
 [![Android CI/CD](https://github.com/ChidcGithub/HyperDict/actions/workflows/android-build.yml/badge.svg)](https://github.com/ChidcGithub/HyperDict/actions/workflows/android-build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![API](https://img.shields.io/badge/API-26%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=26)
+[![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)](https://github.com/ChidcGithub/HyperDict/releases)
 
-为语言学习者、翻译工作者、阅读爱好者打造的新一代词典应用。
+A modern dictionary application for language learners, translators, and reading enthusiasts.
 
-[下载 APK](https://github.com/ChidcGithub/HyperDict/releases) | [功能特性](#功能特性) | [构建说明](#构建说明)
+[Download APK](https://github.com/ChidcGithub/HyperDict/releases) | [Features](#features) | [Build Instructions](#build-instructions)
 
 </div>
 
 ---
 
-## ✨ 功能特性
+## Overview
 
-### 📚 离线词典
-- ✅ 内建英中双语词典（ECDICT，377万+词条）
-- ✅ 无需网络即可查词
-- ✅ 实时搜索建议和自动补全
-- ✅ 快速响应，毫秒级查询
+HyperDict is an Android dictionary application that combines offline and online capabilities to provide comprehensive word definitions. Built with modern Android development practices, it features a Material Design 3 interface with smooth animations and an intuitive user experience.
 
-### 🌐 在线增强
-- ✅ 在线 API 补充详细释义（英文）
-- ✅ 智能本地缓存（7 天有效期）
-- ✅ 离线降级（网络失败时使用缓存）
-- ✅ 数据源指示（在线/离线）
+## Features
 
-### 🎨 用户体验
-- ✅ Material Expressive 3 设计语言
-- ✅ 流畅的动画和过渡效果
-- ✅ 深色模式支持
-- ✅ 动态色彩系统
-- ✅ 清晰的卡片化布局
-- ✅ 一键清除搜索
+### Offline Dictionary
+- Built-in English-Chinese bilingual dictionary (ECDICT, 3.77M+ entries)
+- No internet connection required for basic lookups
+- Real-time search suggestions and auto-completion
+- Fast query response with millisecond-level performance
 
-## 🏗️ 技术栈
+### Online Enhancement
+- Supplementary detailed definitions via online API
+- Intelligent local caching with 7-day validity period
+- Graceful degradation to cached data when network fails
+- Clear data source indicators (online/offline)
 
-- **语言**: Kotlin
-- **UI 框架**: Jetpack Compose
-- **设计规范**: Material Design 3 (Expressive)
-- **架构模式**: MVVM
-- **最低支持版本**: Android 8.0 (API 26)
-- **依赖注入**: Service Locator 模式
-- **数据库**: SQLite + Room
-- **网络请求**: Retrofit + OkHttp
-- **异步处理**: Kotlin Coroutines
+### User Experience
+- Material Design 3 Expressive design language
+- Smooth animations and transitions
+- Dark mode support
+- Dynamic color system
+- Clean card-based layout
+- One-tap search clearing
 
-## 📐 架构
+## Technical Stack
 
-采用 MVVM (Model-View-ViewModel) 架构模式：
+- **Language**: Kotlin
+- **UI Framework**: Jetpack Compose
+- **Design System**: Material Design 3 (Expressive)
+- **Architecture**: MVVM (Model-View-ViewModel)
+- **Minimum SDK**: Android 8.0 (API 26)
+- **Dependency Injection**: Service Locator pattern
+- **Database**: SQLite + Room
+- **Networking**: Retrofit + OkHttp
+- **Async Processing**: Kotlin Coroutines
+
+## Architecture
+
+The application follows the MVVM architecture pattern:
 
 ```
 UI Layer (Compose) → ViewModel → Repository → Data Layer
@@ -61,123 +64,137 @@ UI Layer (Compose) → ViewModel → Repository → Data Layer
                                               └─ Retrofit API
 ```
 
-### 数据流
+### Data Flow
 
 ```
-用户查词 → ViewModel → Repository
-                        ├─ 1. 离线词典 (优先)
-                        ├─ 2. Room 缓存 (次选)
-                        ├─ 3. 在线 API (最后)
-                        └─ 4. 过期缓存 (降级)
+User Query → ViewModel → Repository
+                          ├─ 1. Offline Dictionary (Primary)
+                          ├─ 2. Room Cache (Secondary)
+                          ├─ 3. Online API (Fallback)
+                          └─ 4. Expired Cache (Last Resort)
 ```
 
-## 📦 数据源
+## Data Sources
 
-### 离线词典（主）
-- **ECDICT** - 免费英中词典数据库
-- 下载地址: https://github.com/skywind3000/ECDICT
-- 许可证: MIT
-- 词条数: 377万+
+### Offline Dictionary (Primary)
+- **ECDICT** - Free English-Chinese dictionary database
+- Repository: https://github.com/skywind3000/ECDICT
+- License: MIT
+- Entries: 3.77M+
 
-### 在线 API（辅）
-- [Free Dictionary API](https://dictionaryapi.dev/) - 免费在线词典
+### Online API (Secondary)
+- [Free Dictionary API](https://dictionaryapi.dev/) - Free online dictionary service
 
-## 🚀 构建说明
+## Build Instructions
 
-### 前置要求
+### Prerequisites
 
-- Android Studio Hedgehog (2023.1.1) 或更高版本
+- Android Studio Hedgehog (2023.1.1) or later
 - JDK 17
 - Android SDK (API 26+)
 
-### 步骤 1: 克隆项目
+### Step 1: Clone the Repository
 
 ```bash
 git clone https://github.com/ChidcGithub/HyperDict.git
 cd HyperDict
 ```
 
-### 步骤 2: 下载离线词典数据库
+### Step 2: Download Offline Dictionary Database
 
-从以下来源获取词典数据库：
+Obtain the dictionary database from one of the following sources:
 
-- **ECDICT** (推荐): https://github.com/skywind3000/ECDICT
-  - 下载 SQLite 版本或 CSV 转换
-  - 包含 377万+ 英中双语词条
+- **ECDICT** (Recommended): https://github.com/skywind3000/ECDICT
+  - Download the SQLite version or convert from CSV
+  - Contains 3.77M+ English-Chinese bilingual entries
 
-详细说明请参考 [DICTIONARY_SETUP.md](DICTIONARY_SETUP.md)
+For detailed instructions, refer to [DICTIONARY_SETUP.md](DICTIONARY_SETUP.md)
 
-### 步骤 3: 放入项目
+### Step 3: Place Database File
 
-将数据库文件重命名为 `dictionary.db` 并放到：
+Rename the database file to `dictionary.db` and place it in:
 ```
 app/src/main/assets/dictionary.db
 ```
 
-### 步骤 4: 构建运行
+### Step 4: Build and Run
 
-1. 使用 Android Studio 打开项目
-2. 等待 Gradle 同步完成
-3. 运行到模拟器或真机
+#### Using Android Studio
+1. Open the project in Android Studio
+2. Wait for Gradle sync to complete
+3. Run on emulator or physical device
 
-或使用命令行：
+#### Using Command Line
 
 ```bash
-# Debug 版本
+# Debug build
 ./gradlew assembleDebug
 
-# Release 版本
+# Release build
 ./gradlew assembleRelease
 ```
 
-## 📱 截图
+## CI/CD
 
-> 待添加应用截图
+The project uses GitHub Actions for automated building and releasing:
 
-## 🔄 CI/CD
+- Automatic build of Debug and Release APKs
+- Automatic release creation when tags are pushed
+- APK upload to GitHub Releases
 
-项目使用 GitHub Actions 自动构建和发布：
-
-- ✅ 自动构建 Debug 和 Release APK
-- ✅ 推送 tag 时自动创建 Release
-- ✅ 上传 APK 到 GitHub Releases
-
-### 创建新版本
+### Creating a New Release
 
 ```bash
-git tag -a v1.0.0 -m "Release version 1.0.0"
-git push origin v1.0.0
+git tag -a v0.0.1 -m "Release version 0.0.1"
+git push origin v0.0.1
 ```
 
-## 🗺️ 后续规划
+## Project Structure
 
-- [ ] 生词本/收藏夹
-- [ ] 搜索历史记录
-- [ ] 发音播放（TTS）
-- [ ] 更多词典数据源
-- [ ] 单词卡片学习模式
-- [ ] 导出/导入生词本
-- [ ] 桌面小部件
-- [ ] 分享功能
+```
+app/src/main/java/com/hyperdict/app/
+├── data/
+│   ├── local/          # SQLite offline dictionary + Room cache
+│   ├── remote/         # Retrofit API interfaces
+│   ├── repository/     # Data repository (offline-first strategy)
+│   └── model/          # Data models
+├── ui/
+│   ├── screens/        # Compose UI screens
+│   ├── theme/          # Material Design 3 theme
+│   └── viewmodel/      # ViewModel business logic
+├── di/                 # Dependency injection (Service Locator)
+└── MainActivity.kt     # Application entry point
+```
 
-## 🤝 贡献
+## Roadmap
 
-欢迎提交 Issue 和 Pull Request！
+- Favorites/Bookmarks functionality
+- Search history
+- Text-to-speech pronunciation
+- Additional dictionary sources
+- Flashcard learning mode
+- Import/Export word lists
+- Home screen widget
+- Share functionality
 
-## 📄 许可证
+## Contributing
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
+Issues and Pull Requests are welcome.
 
-## 🙏 致谢
+## License
 
-- [ECDICT](https://github.com/skywind3000/ECDICT) - 提供离线词典数据
-- [Free Dictionary API](https://dictionaryapi.dev/) - 提供在线词典 API
-- [Material Design 3](https://m3.material.io/) - 设计规范
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [ECDICT](https://github.com/skywind3000/ECDICT) - Offline dictionary data
+- [Free Dictionary API](https://dictionaryapi.dev/) - Online dictionary API
+- [Material Design 3](https://m3.material.io/) - Design guidelines
 
 ---
 
 <div align="center">
 
-Made with ❤️ by [ChidcGithub](https://github.com/ChidcGithub)
+Developed by [ChidcGithub](https://github.com/ChidcGithub)
 
 </div>

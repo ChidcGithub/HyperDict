@@ -90,7 +90,40 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: HyperDict-v0.0.1+${{ steps.commit.outputs.short_sha }}-release.apk
-        generate_release_notes: true
+        body: |
+          ## Release Notes
+
+          HyperDict version 0.0.1 - Build ${{ steps.commit.outputs.short_sha }}
+
+          ### Features
+          - Offline dictionary with 3.77M+ English-Chinese entries (ECDICT)
+          - Online API integration with smart caching
+          - Material Design 3 Expressive interface
+          - Real-time search suggestions
+          - Smooth animations and transitions
+          - Dark mode support
+          - Clear search functionality
+
+          ### Technical Details
+          - Architecture: MVVM
+          - UI: Jetpack Compose
+          - Minimum SDK: Android 8.0 (API 26)
+          - Build: ${{ steps.commit.outputs.short_sha }}
+
+          ### Installation
+          1. Download the APK file below
+          2. Enable "Install from Unknown Sources" in Android settings
+          3. Install the APK
+          4. Launch HyperDict
+
+          ### Notes
+          - First launch may take a few seconds to initialize the database
+          - Internet connection required for online definitions
+          - Offline dictionary works without internet
+
+          ---
+
+          Full changelog: https://github.com/ChidcGithub/HyperDict/commits/v0.0.1
         draft: false
         prerelease: false
       env:
