@@ -76,54 +76,114 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Get version info
+      id: version
+      run: |
+        echo "version=$(grep 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
+        echo "build_date=$(date +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+        echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
     - name: Get commit hash
       id: commit
       run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-    - name: Download Release APK
-      uses: actions/download-artifact@v4
-      with:
-        name: app-release
-        path: ./
+    - name: Get APK info
+      id: apk_info
+      run: |
+        APK_PATH="HyperDict-v0.0.1+${{ steps.commit.outputs.short_sha }}-release.apk"
+        APK_SIZE=$(ls -lh "$APK_PATH" | awk '{print $5}')
+        echo "apk_size=$APK_SIZE" >> $GITHUB_OUTPUT
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         files: HyperDict-v0.0.1+${{ steps.commit.outputs.short_sha }}-release.apk
         body: |
-          ## Release Notes
+          # HyperDict ${{ steps.version.outputs.tag_name }}
 
-          HyperDict version 0.0.1 - Build ${{ steps.commit.outputs.short_sha }}
+          A modern dictionary application combining offline and online capabilities with Material Design 3.
+
+          ## Download
+
+          **APK File:** `HyperDict-v0.0.1+${{ steps.commit.outputs.short_sha }}-release.apk`
+          **Size:** ${{ steps.apk_info.outputs.apk_size }}
+          **Build:** ${{ steps.commit.outputs.short_sha }}
+          **Date:** ${{ steps.version.outputs.build_date }}
+
+          ## What's New
 
           ### Features
           - Offline dictionary with 3.77M+ English-Chinese entries (ECDICT)
-          - Online API integration with smart caching
-          - Material Design 3 Expressive interface
-          - Real-time search suggestions
-          - Smooth animations and transitions
-          - Dark mode support
+          - Online API integration with intelligent caching (7-day validity)
+          - Material Design 3 Expressive interface with smooth animations
+          - Real-time search suggestions and auto-completion
+          - Dark mode support with dynamic color system
           - Clear search functionality
+          - Graceful offline degradation
 
-          ### Technical Details
-          - Architecture: MVVM
-          - UI: Jetpack Compose
-          - Minimum SDK: Android 8.0 (API 26)
-          - Build: ${{ steps.commit.outputs.short_sha }}
+          ### Technical Highlights
+          - **Architecture:** MVVM with offline-first strategy
+          - **UI Framework:** Jetpack Compose
+          - **Language:** Kotlin with Coroutines
+          - **Database:** SQLite (offline) + Room (cache)
+          - **Networking:** Retrofit + OkHttp
+          - **Min SDK:** Android 8.0 (API 26)
+          - **Target SDK:** Android 14 (API 34)
 
-          ### Installation
-          1. Download the APK file below
-          2. Enable "Install from Unknown Sources" in Android settings
-          3. Install the APK
-          4. Launch HyperDict
+          ## Installation
 
-          ### Notes
-          - First launch may take a few seconds to initialize the database
-          - Internet connection required for online definitions
-          - Offline dictionary works without internet
+          ### Requirements
+          - Android 8.0 (Oreo) or higher
+          - ~850 MB storage space (includes dictionary database)
+          - Internet connection for online definitions (optional)
+
+          ### Steps
+          1. Download the APK file above
+          2. Enable "Install from Unknown Sources" in Android settings:
+             - Settings > Security > Unknown Sources (Android 8-9)
+             - Settings > Apps > Special Access > Install Unknown Apps (Android 10+)
+          3. Open the downloaded APK file
+          4. Follow the installation prompts
+          5. Launch HyperDict
+
+          ## First Launch
+
+          - Initial startup may take a few seconds to initialize the database
+          - The app works fully offline for basic lookups
+          - Internet connection enhances definitions with detailed online content
+
+          ## Usage Tips
+
+          - **Search:** Type any English word in the search bar
+          - **Suggestions:** Real-time suggestions appear as you type
+          - **Clear:** Tap the X button to clear search
+          - **Dark Mode:** Follows system theme automatically
+          - **Offline Indicator:** Cloud icon shows online/offline status
+
+          ## Known Issues
+
+          - First search may be slightly slower due to database initialization
+          - Online definitions require active internet connection
+          - APK is unsigned (you may see a warning during installation)
+
+          ## Data Sources
+
+          - **Offline:** ECDICT (MIT License) - https://github.com/skywind3000/ECDICT
+          - **Online:** Free Dictionary API - https://dictionaryapi.dev/
+
+          ## Support
+
+          - **Issues:** https://github.com/ChidcGithub/HyperDict/issues
+          - **Source Code:** https://github.com/ChidcGithub/HyperDict
+          - **Documentation:** https://github.com/ChidcGithub/HyperDict/blob/main/README.md
+
+          ## Changelog
+
+          Full changelog: https://github.com/ChidcGithub/HyperDict/commits/${{ steps.version.outputs.tag_name }}
 
           ---
 
-          Full changelog: https://github.com/ChidcGithub/HyperDict/commits/v0.0.1
+          Built with GitHub Actions | Commit: ${{ steps.commit.outputs.short_sha }}
         draft: false
         prerelease: false
       env:
