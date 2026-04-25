@@ -1,6 +1,7 @@
 package com.hyperdict.app.di
 
 import android.content.Context
+import com.hyperdict.app.data.local.DatabaseDownloader
 import com.hyperdict.app.data.local.DictionaryDatabase
 import com.hyperdict.app.data.local.OfflineDictionarySource
 import com.hyperdict.app.data.local.WordDatabase
@@ -37,9 +38,13 @@ object ServiceLocator {
         return WordRepository(api, db.wordDao(), offlineSource)
     }
 
-    private fun createOfflineDictionarySource(context: Context): OfflineDictionarySource {
+    fun createOfflineDictionarySource(context: Context): OfflineDictionarySource {
         val db = DictionaryDatabase.getInstance(context)
         return OfflineDictionarySource(db)
+    }
+
+    fun isOfflineDatabaseAvailable(context: Context): Boolean {
+        return DatabaseDownloader.isDatabaseDownloaded(context)
     }
 
     private fun createApi(): DictionaryApi {

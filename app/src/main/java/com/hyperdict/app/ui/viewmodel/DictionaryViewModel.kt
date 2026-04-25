@@ -1,13 +1,17 @@
 package com.hyperdict.app.ui.viewmodel
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hyperdict.app.data.local.DatabaseDownloader
+import com.hyperdict.app.data.local.DownloadProgress
 import com.hyperdict.app.data.local.WordSuggestion
 import com.hyperdict.app.data.model.WordDefinition
 import com.hyperdict.app.data.repository.WordRepository
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 sealed interface UiState {
@@ -20,7 +24,8 @@ sealed interface UiState {
 }
 
 class DictionaryViewModel(
-    private val repository: WordRepository
+    private val repository: WordRepository,
+    private val context: Context
 ) : ViewModel() {
 
     var uiState by mutableStateOf<UiState>(UiState.Idle)
@@ -30,6 +35,14 @@ class DictionaryViewModel(
         private set
 
     var suggestions by mutableStateOf<List<WordSuggestion>>(emptyList())
+        private set
+
+    var downloadProgress by mutableStateOf<DownloadProgress>(
+        if (DatabaseDownloader.isDatabaseDownloaded(context))
+            DownloadProgress(DownloadProgress.Status.SUCCESS)
+        else
+            DownloadProgress(DownloadProgress.Status.NOT_STARTED)
+    )
         private set
 
     fun onQueryChange(query: String) {
@@ -74,6 +87,14 @@ class DictionaryViewModel(
                     uiState = UiState.Error(error.message ?: "Unknown error occurred")
                 }
             )
+        }
+    }
+
+    fun startDatabaseDownload() {
+        viewModelScope.launch {
+            DatabaseDownloader.downloadDatabase(context).collectLatest { progress ->
+                downloadProgress = progress
+            }
         }
     }
 

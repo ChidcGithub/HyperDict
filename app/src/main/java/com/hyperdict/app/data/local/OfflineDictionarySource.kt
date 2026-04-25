@@ -11,21 +11,28 @@ class OfflineDictionarySource(
      * Look up a word in the offline dictionary
      */
     fun lookupWord(word: String): WordDefinition? {
-        val result = database.lookupWord(word) ?: return null
-
-        return parseDictionaryResult(word, result)
+        return try {
+            val result = database.lookupWord(word) ?: return null
+            parseDictionaryResult(word, result)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     /**
      * Search for words starting with the given query
      */
     fun searchWords(query: String, limit: Int = 20): List<WordSuggestion> {
-        val results = database.searchWords(query, limit)
-        return results.map {
-            WordSuggestion(
-                word = it["word"] ?: "",
-                definition = it["definition"] ?: ""
-            )
+        return try {
+            val results = database.searchWords(query, limit)
+            results.map {
+                WordSuggestion(
+                    word = it["word"] ?: "",
+                    definition = it["definition"] ?: ""
+                )
+            }
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 

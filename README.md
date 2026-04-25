@@ -21,9 +21,10 @@ HyperDict is an Android dictionary application that combines offline and online 
 
 ## Features
 
-### Offline Dictionary
+### Features
+- Offline-first architecture with automatic database download on first launch
 - Built-in English-Chinese bilingual dictionary (ECDICT, 3.77M+ entries)
-- No internet connection required for basic lookups
+- No internet connection required for basic lookups (after initial download)
 - Real-time search suggestions and auto-completion
 - Fast query response with millisecond-level performance
 
@@ -100,29 +101,13 @@ git clone https://github.com/ChidcGithub/HyperDict.git
 cd HyperDict
 ```
 
-### Step 2: Download Offline Dictionary Database
-
-Obtain the dictionary database from one of the following sources:
-
-- **ECDICT** (Recommended): https://github.com/skywind3000/ECDICT
-  - Download the SQLite version or convert from CSV
-  - Contains 3.77M+ English-Chinese bilingual entries
-
-For detailed instructions, refer to [DICTIONARY_SETUP.md](DICTIONARY_SETUP.md)
-
-### Step 3: Place Database File
-
-Rename the database file to `dictionary.db` and place it in:
-```
-app/src/main/assets/dictionary.db
-```
-
-### Step 4: Build and Run
+### Step 2: Build and Run
 
 #### Using Android Studio
 1. Open the project in Android Studio
 2. Wait for Gradle sync to complete
 3. Run on emulator or physical device
+4. On first launch, the app will download the dictionary database automatically (~300MB)
 
 #### Using Command Line
 
@@ -187,7 +172,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- [ECDICT](https://github.com/skywind3000/ECDICT) - Offline dictionary data
+- [ECDICT](https://github.com/skywind3000/ECDICT) - Offline dictionary data (3.77M+ entries)
+  - Database source: [ecdict-sqlite release](https://github.com/skywind3000/ECDICT/releases/download/1.0.28/ecdict-sqlite-28.zip)
+  - Author: [skywind3000](https://github.com/skywind3000)
+  - License: MIT
 - [Free Dictionary API](https://dictionaryapi.dev/) - Online dictionary API
 - [Material Design 3](https://m3.material.io/) - Design guidelines
 

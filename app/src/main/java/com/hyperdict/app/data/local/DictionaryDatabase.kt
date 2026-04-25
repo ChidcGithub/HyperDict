@@ -4,15 +4,12 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import java.io.File
-import java.io.FileOutputStream
-import java.io.InputStream
 
 class DictionaryDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
         private const val DATABASE_NAME = "ecdict.db"
         private const val DATABASE_VERSION = 1
-        private const val ASSET_DB_NAME = "dictionary.db"
 
         @Volatile
         private var INSTANCE: DictionaryDatabase? = null
@@ -26,34 +23,14 @@ class DictionaryDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_
         fun getDatabasePath(context: Context): File {
             return context.getDatabasePath(DATABASE_NAME)
         }
+
+        fun isDatabaseAvailable(context: Context): Boolean {
+            return getDatabasePath(context).exists()
+        }
     }
 
     init {
-        // Copy database from assets if it doesn't exist
-        val dbPath = context.getDatabasePath(DATABASE_NAME)
-        if (!dbPath.exists()) {
-            dbPath.parentFile?.mkdirs()
-            copyDatabaseFromAssets(context)
-        }
-    }
-
-    private fun copyDatabaseFromAssets(context: Context) {
-        try {
-            val inputStream: InputStream = context.assets.open(ASSET_DB_NAME)
-            val outputStream = FileOutputStream(getDatabasePath(context))
-
-            val buffer = ByteArray(1024)
-            var length: Int
-            while (inputStream.read(buffer).also { length = it } > 0) {
-                outputStream.write(buffer, 0, length)
-            }
-
-            outputStream.flush()
-            outputStream.close()
-            inputStream.close()
-        } catch (e: Exception) {
-            throw RuntimeException("Error copying database from assets", e)
-        }
+        // Database should be downloaded before accessing, do nothing here
     }
 
     override fun onCreate(db: SQLiteDatabase?) {

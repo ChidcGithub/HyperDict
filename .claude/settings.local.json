@@ -15,7 +15,10 @@
       "Bash(git push *)",
       "Bash(git tag *)",
       "Bash(git branch *)",
-      "Bash(curl -L https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar)"
+      "Bash(curl -L https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar)",
+      "Bash(curl -L \"https://raw.githubusercontent.com/android/compose-samples/main/Jetchat/app/src/main/res/mipmap-mdpi/ic_launcher.png\" -o app/src/main/res/mipmap-mdpi/ic_launcher.png)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)"
     ]
   }
 }

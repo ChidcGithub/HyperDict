@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val viewModel: DictionaryViewModel = viewModel(
-                        factory = DictionaryViewModelFactory(repository)
+                        factory = DictionaryViewModelFactory(repository, this)
                     )
                     HomeScreen(viewModel = viewModel)
                 }

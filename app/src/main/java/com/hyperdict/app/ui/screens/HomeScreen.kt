@@ -10,8 +10,12 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +26,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.hyperdict.app.data.local.DownloadProgress
 import com.hyperdict.app.data.local.WordSuggestion
 import com.hyperdict.app.ui.viewmodel.DictionaryViewModel
 import com.hyperdict.app.ui.viewmodel.UiState
@@ -32,6 +37,31 @@ fun HomeScreen(
     viewModel: DictionaryViewModel
 ) {
     var showSuggestions by remember { mutableStateOf(true) }
+
+    // Check if database needs to be downloaded
+    val progress = viewModel.downloadProgress
+    when (progress.status) {
+        DownloadProgress.Status.NOT_STARTED -> {
+            DatabaseDownloadRequiredScreen(
+                onStartDownload = { viewModel.startDatabaseDownload() }
+            )
+            return
+        }
+        DownloadProgress.Status.DOWNLOADING -> {
+            DatabaseDownloadingScreen(progress = progress)
+            return
+        }
+        DownloadProgress.Status.FAILED -> {
+            DatabaseDownloadFailedScreen(
+                error = progress.error,
+                onRetry = { viewModel.startDatabaseDownload() }
+            )
+            return
+        }
+        DownloadProgress.Status.SUCCESS -> {
+            // Continue to main screen
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -318,5 +348,163 @@ private fun ErrorState(message: String) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun DatabaseDownloadRequiredScreen(
+    onStartDownload: () -> Unit
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier.padding(32.dp),
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Download,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Download Dictionary Database",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "The offline dictionary database needs to be downloaded. This may take a while depending on your internet connection.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                Button(
+                    onClick = onStartDownload,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Start Download")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DatabaseDownloadingScreen(
+    progress: DownloadProgress
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier.padding(32.dp),
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Sync,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Downloading Dictionary...",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                LinearProgressIndicator(
+                    progress = { progress.percentage / 100f },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    text = "${progress.percentage}%",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (progress.totalBytes > 0) {
+                    Text(
+                        text = "${formatBytes(progress.bytesDownloaded)} / ${formatBytes(progress.totalBytes)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DatabaseDownloadFailedScreen(
+    error: String?,
+    onRetry: () -> Unit
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier.padding(32.dp),
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Error,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.error
+                )
+                Text(
+                    text = "Download Failed",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+                Text(
+                    text = error ?: "An unknown error occurred",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    textAlign = TextAlign.Center
+                )
+                Button(
+                    onClick = onRetry,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Retry")
+                }
+            }
+        }
+    }
+}
+
+private fun formatBytes(bytes: Long): String {
+    return when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
+        bytes < 1024 * 1024 * 1024 -> "${bytes / (1024 * 1024)} MB"
+        else -> "${bytes / (1024 * 1024 * 1024)} GB"
     }
 }
