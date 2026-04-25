@@ -73,12 +73,12 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
 
-    // Navigation Compose (no version needed - managed by BOM)
-    implementation("androidx.navigation:navigation-compose")
+    // Navigation Compose (not managed by Compose BOM)
+    implementation("androidx.navigation:navigation-compose:2.9.0")
 
-    // ViewModel Compose
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose")
+    // ViewModel Compose (not managed by Compose BOM)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.1")
 
     // Room Database
     implementation("androidx.room:room-runtime:2.7.1")
