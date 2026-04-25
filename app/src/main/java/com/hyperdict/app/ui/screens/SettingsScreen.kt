@@ -29,10 +29,13 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             Surface(tonalElevation = 2.dp) {
+                // Add status bar padding
+                val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                        .padding(start = 16.dp, end = 16.dp, top = statusBarPadding + 16.dp, bottom = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
