@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.flow
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.zip.ZipInputStream
@@ -64,16 +66,26 @@ object DatabaseDownloader {
             connection.readTimeout = 120000
             connection.connect()
 
+            val responseCode = connection.responseCode
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                throw java.io.IOException("Server returned HTTP $responseCode")
+            }
+
             val totalBytes = connection.contentLengthLong
+            if (totalBytes <= 0) {
+                Log.w(TAG, "Server did not return content length")
+            }
             inputStream = connection.inputStream
 
             // Use ZipInputStream to extract the database file
             val zipInputStream = ZipInputStream(inputStream)
             val outputStream = FileOutputStream(dbFile)
 
+            var entryFound = false
             var entry = zipInputStream.nextEntry
             while (entry != null) {
-                if (entry.name == DATABASE_FILE_IN_ZIP || entry.name.endsWith("/$DATABASE_FILE_IN_ZIP")) {
+                val entryName = entry.name.substringAfterLast('/').substringAfterLast('\\')
+                if (entryName == DATABASE_FILE_IN_ZIP) {
                     val buffer = ByteArray(8192)
                     var bytesRead: Int
                     var totalBytesRead = 0L
@@ -90,9 +102,16 @@ object DatabaseDownloader {
                             )
                         )
                     }
+                    entryFound = true
                     break
                 }
                 entry = zipInputStream.nextEntry
+            }
+
+            if (!entryFound) {
+                outputStream.close()
+                dbFile.delete()
+                throw java.io.IOException("Database file '$DATABASE_FILE_IN_ZIP' not found in ZIP archive")
             }
 
             outputStream.flush()
@@ -100,24 +119,42 @@ object DatabaseDownloader {
             zipInputStream.closeEntry()
             zipInputStream.close()
 
-            emit(DownloadProgress(DownloadProgress.Status.SUCCESS))
-            Log.d(TAG, "Database downloaded successfully to: ${dbFile.absolutePath}")
+            // Verify the downloaded file
+            if (!dbFile.exists() || dbFile.length() == 0L) {
+                throw java.io.IOException("Downloaded database file is empty or corrupted")
+            }
 
-        } catch (e: Exception) {
+            emit(DownloadProgress(DownloadProgress.Status.SUCCESS))
+            Log.d(TAG, "Database downloaded successfully to: ${dbFile.absolutePath} (${dbFile.length()} bytes)")
+
+        } catch (e: Throwable) {
             Log.e(TAG, "Failed to download database", e)
             dbFile.delete()
             val errorMessage = buildString {
-                append(e.message ?: "Unknown error")
+                val message = e.message
+                if (!message.isNullOrBlank()) {
+                    append(message)
+                } else {
+                    append("Error: ${e::class.java.simpleName}")
+                }
                 if (e.cause != null) {
                     append("\nCaused by: ${e.cause?.message}")
                 }
-                // Add helpful context based on exception type
+                // Add helpfulcontext based on exception type
                 when (e) {
                     is java.net.SocketTimeoutException -> append("\n\nConnection timed out. Please check your network.")
                     is java.net.UnknownHostException -> append("\n\nCannot reach server. Check internet connection.")
-                    is java.io.IOException -> append("\n\nNetwork error: ${e.message}")
+                    is java.net.MalformedURLException -> append("\n\nInvalid download URL.")
+                    is java.io.FileNotFoundException -> append("\n\nFile not found: $message")
+                    is java.io.IOException -> append("\n\nNetwork or storage error.")
+                    is SecurityException -> append("\n\nPermission denied: $message")
                     else -> {}
                 }
+                // Append full stack trace for debugging
+                append("\n\n--- Full Stack Trace ---\n")
+                val sw = StringWriter()
+                e.printStackTrace(PrintWriter(sw))
+                append(sw.toString())
             }
             emit(
                 DownloadProgress(
@@ -126,8 +163,8 @@ object DatabaseDownloader {
                 )
             )
         } finally {
-            inputStream?.close()
-            connection?.disconnect()
+            try { inputStream?.close() } catch (_: Exception) {}
+            try { connection?.disconnect() } catch (_: Exception) {}
         }
     }
 }
