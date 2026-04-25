@@ -2,187 +2,289 @@ name: Android CI/CD
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, dev ]
     tags:
       - 'v*'
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, dev ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    outputs:
+      short_sha: ${{ steps.info.outputs.short_sha }}
+      version: ${{ steps.info.outputs.version }}
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: gradle
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
 
-    - name: Get commit hash
-      id: commit
-      run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: Get build info
+        id: info
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          VERSION=$(grep 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+          BUILD_DATE=$(date +'%Y-%m-%d %H:%M:%S UTC')
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+          # Current commit subject + body
+          COMMIT_SUBJECT=$(git log -1 --pretty=format:"%s")
+          COMMIT_BODY=$(git log -1 --pretty=format:"%b")
+          echo "commit_subject=$COMMIT_SUBJECT" >> $GITHUB_OUTPUT
+          {
+            echo "commit_body<<__EOF__"
+            echo "$COMMIT_BODY"
+            echo "__EOF__"
+          } >> $GITHUB_OUTPUT
 
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug --stacktrace
-      env:
-        VERSION_SUFFIX: "+${{ steps.commit.outputs.short_sha }}"
+          # Changelog: dev = current commit only; main/tag = since last stable tag
+          if [ "$GITHUB_REF" = "refs/heads/dev" ]; then
+            {
+              echo "changelog<<__EOF__"
+              git log -1 --pretty=format:"- %s (%h)"
+              echo
+              echo "__EOF__"
+            } >> $GITHUB_OUTPUT
+          else
+            LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+            {
+              echo "changelog<<__EOF__"
+              if [ -z "$LAST_TAG" ]; then
+                git log --pretty=format:"- %s (%h)"
+              else
+                git log --pretty=format:"- %s (%h)" "${LAST_TAG}..HEAD"
+              fi
+              echo
+              echo "__EOF__"
+            } >> $GITHUB_OUTPUT
+          fi
 
-    - name: Build Release APK
-      run: ./gradlew assembleRelease --stacktrace
-      env:
-        VERSION_SUFFIX: "+${{ steps.commit.outputs.short_sha }}"
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
-    - name: Rename APKs with commit hash
-      run: |
-        find app/build/outputs/apk/debug -name "*.apk" -exec mv {} app/build/outputs/apk/debug/HyperDict-v0.0.1+${{ steps.commit.outputs.short_sha }}-debug.apk \;
-        find app/build/outputs/apk/release -name "*.apk" -exec mv {} app/build/outputs/apk/release/HyperDict-v0.0.1+${{ steps.commit.outputs.short_sha }}-release.apk \;
+      - name: Build Debug APK
+        if: github.ref == 'refs/heads/dev'
+        run: ./gradlew assembleDebug --stacktrace
 
-    - name: Upload Debug APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-debug
-        path: app/build/outputs/apk/debug/HyperDict-v0.0.1+${{ steps.commit.outputs.short_sha }}-debug.apk
+      - name: Build Debug and Release APKs
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        run: ./gradlew assembleDebug assembleRelease --stacktrace
 
-    - name: Upload Release APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-release
-        path: app/build/outputs/apk/release/HyperDict-v0.0.1+${{ steps.commit.outputs.short_sha }}-release.apk
+      - name: Rename APKs
+        id: apk
+        run: |
+          SHORT_SHA=${{ steps.info.outputs.short_sha }}
+          VERSION=${{ steps.info.outputs.version }}
 
-  release:
+          DEBUG_SRC=$(find app/build/outputs/apk/debug -name "*.apk" | head -1)
+          if [ -n "$DEBUG_SRC" ]; then
+            DEBUG_DST="app/build/outputs/apk/debug/HyperDict-v${VERSION}+${SHORT_SHA}-debug.apk"
+            mv "$DEBUG_SRC" "$DEBUG_DST"
+            echo "debug_apk=$DEBUG_DST" >> $GITHUB_OUTPUT
+          fi
+
+          RELEASE_SRC=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
+          if [ -n "$RELEASE_SRC" ]; then
+            RELEASE_DST="app/build/outputs/apk/release/HyperDict-v${VERSION}+${SHORT_SHA}-release.apk"
+            mv "$RELEASE_SRC" "$RELEASE_DST"
+            echo "release_apk=$RELEASE_DST" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload Debug APK artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: HyperDict-v${{ steps.info.outputs.version }}+${{ steps.info.outputs.short_sha }}-debug
+          path: app/build/outputs/apk/debug/*.apk
+
+      - name: Upload Release APK artifact
+        uses: actions/upload-artifact@v4
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        with:
+          name: HyperDict-v${{ steps.info.outputs.version }}+${{ steps.info.outputs.short_sha }}-release
+          path: app/build/outputs/apk/release/*.apk
+
+  # Dev branch: pre-release showing only current commit
+  release-dev:
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-
+    if: github.ref == 'refs/heads/dev'
     permissions:
       contents: write
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Get version info
-      id: version
-      run: |
-        echo "version=$(grep 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')" >> $GITHUB_OUTPUT
-        echo "build_date=$(date +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
-        echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      - name: Get build info
+        id: info
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          VERSION=$(grep 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+          BUILD_DATE=$(date +'%Y-%m-%d %H:%M:%S UTC')
+          COMMIT_SUBJECT=$(git log -1 --pretty=format:"%s")
+          {
+            echo "commit_body<<__EOF__"
+            git log -1 --pretty=format:"%b"
+            echo
+            echo "__EOF__"
+          } >> $GITHUB_OUTPUT
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
+          echo "commit_subject=$COMMIT_SUBJECT" >> $GITHUB_OUTPUT
 
-    - name: Get commit hash
-      id: commit
-      run: echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: Download Debug APK
+        uses: actions/download-artifact@v4
+        with:
+          name: HyperDict-v${{ needs.build.outputs.version }}+${{ needs.build.outputs.short_sha }}-debug
+          path: ./apk
 
-    - name: Get APK info
-      id: apk_info
-      run: |
-        APK_PATH="HyperDict-v0.0.1+${{ steps.commit.outputs.short_sha }}-release.apk"
-        APK_SIZE=$(ls -lh "$APK_PATH" | awk '{print $5}')
-        echo "apk_size=$APK_SIZE" >> $GITHUB_OUTPUT
+      - name: Delete previous dev release and tag
+        run: |
+          gh release delete dev-latest --yes 2>/dev/null || true
+          git push origin :refs/tags/dev-latest 2>/dev/null || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: HyperDict-v0.0.1+${{ steps.commit.outputs.short_sha }}-release.apk
-        body: |
-          # HyperDict ${{ steps.version.outputs.tag_name }}
+      - name: Create dev pre-release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: dev-latest
+          name: "Dev Build v${{ steps.info.outputs.version }}+${{ steps.info.outputs.short_sha }}"
+          prerelease: true
+          files: ./apk/*.apk
+          body: |
+            ## Dev Build
 
-          A modern dictionary application combining offline and online capabilities with Material Design 3.
+            > This is an automated development build from the `dev` branch. Not intended for production use.
 
-          ## Download
+            **Version:** v${{ steps.info.outputs.version }}+${{ steps.info.outputs.short_sha }}
+            **Branch:** dev
+            **Date:** ${{ steps.info.outputs.build_date }}
 
-          **APK File:** `HyperDict-v0.0.1+${{ steps.commit.outputs.short_sha }}-release.apk`
-          **Size:** ${{ steps.apk_info.outputs.apk_size }}
-          **Build:** ${{ steps.commit.outputs.short_sha }}
-          **Date:** ${{ steps.version.outputs.build_date }}
+            ## Commit
 
-          ## What's New
+            **${{ steps.info.outputs.commit_subject }}**
 
-          ### Features
-          - Offline dictionary with 3.77M+ English-Chinese entries (ECDICT)
-          - Online API integration with intelligent caching (7-day validity)
-          - Material Design 3 Expressive interface with smooth animations
-          - Real-time search suggestions and auto-completion
-          - Dark mode support with dynamic color system
-          - Clear search functionality
-          - Graceful offline degradation
+            ${{ steps.info.outputs.commit_body }}
 
-          ### Technical Highlights
-          - **Architecture:** MVVM with offline-first strategy
-          - **UI Framework:** Jetpack Compose
-          - **Language:** Kotlin with Coroutines
-          - **Database:** SQLite (offline) + Room (cache)
-          - **Networking:** Retrofit + OkHttp
-          - **Min SDK:** Android 8.0 (API 26)
-          - **Target SDK:** Android 14 (API 34)
+            ## Installation
 
-          ## Installation
+            1. Download the APK file below
+            2. Enable "Install from Unknown Sources" in Android settings
+            3. Install the APK
 
-          ### Requirements
-          - Android 8.0 (Oreo) or higher
-          - ~850 MB storage space (includes dictionary database)
-          - Internet connection for online definitions (optional)
+            ---
+            Commit: ${{ steps.info.outputs.short_sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          ### Steps
-          1. Download the APK file above
-          2. Enable "Install from Unknown Sources" in Android settings:
-             - Settings > Security > Unknown Sources (Android 8-9)
-             - Settings > Apps > Special Access > Install Unknown Apps (Android 10+)
-          3. Open the downloaded APK file
-          4. Follow the installation prompts
-          5. Launch HyperDict
+  # Main branch / tag: stable release showing full changelog since last stable tag
+  release-stable:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
 
-          ## First Launch
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-          - Initial startup may take a few seconds to initialize the database
-          - The app works fully offline for basic lookups
-          - Internet connection enhances definitions with detailed online content
+      - name: Get build info
+        id: info
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          VERSION=$(grep 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+          BUILD_DATE=$(date +'%Y-%m-%d %H:%M:%S UTC')
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$BUILD_DATE" >> $GITHUB_OUTPUT
 
-          ## Usage Tips
+          # Changelog: all commits since last stable tag (excluding dev-latest tags)
+          LAST_TAG=$(git tag --sort=-creatordate | grep -E '^v[0-9]' | head -1 2>/dev/null || echo "")
+          {
+            echo "changelog<<__EOF__"
+            if [ -z "$LAST_TAG" ]; then
+              git log --pretty=format:"- %s (%h)"
+            else
+              git log --pretty=format:"- %s (%h)" "${LAST_TAG}..HEAD"
+            fi
+            echo
+            echo "__EOF__"
+          } >> $GITHUB_OUTPUT
+          echo "last_tag=$LAST_TAG" >> $GITHUB_OUTPUT
 
-          - **Search:** Type any English word in the search bar
-          - **Suggestions:** Real-time suggestions appear as you type
-          - **Clear:** Tap the X button to clear search
-          - **Dark Mode:** Follows system theme automatically
-          - **Offline Indicator:** Cloud icon shows online/offline status
+      - name: Download Debug APK
+        uses: actions/download-artifact@v4
+        with:
+          name: HyperDict-v${{ needs.build.outputs.version }}+${{ needs.build.outputs.short_sha }}-debug
+          path: ./apk
 
-          ## Known Issues
+      - name: Download Release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: HyperDict-v${{ needs.build.outputs.version }}+${{ needs.build.outputs.short_sha }}-release
+          path: ./apk
 
-          - First search may be slightly slower due to database initialization
-          - Online definitions require active internet connection
-          - APK is unsigned (you may see a warning during installation)
+      - name: Create stable release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('stable-{0}', steps.info.outputs.short_sha) }}
+          name: "HyperDict v${{ steps.info.outputs.version }}+${{ steps.info.outputs.short_sha }}"
+          prerelease: false
+          files: ./apk/*.apk
+          body: |
+            # HyperDict v${{ steps.info.outputs.version }}
 
-          ## Data Sources
+            **Version:** v${{ steps.info.outputs.version }}+${{ steps.info.outputs.short_sha }}
+            **Branch:** main
+            **Date:** ${{ steps.info.outputs.build_date }}
+            ${{ steps.info.outputs.last_tag != '' && format('**Since:** {0}', steps.info.outputs.last_tag) || '' }}
 
-          - **Offline:** ECDICT (MIT License) - https://github.com/skywind3000/ECDICT
-          - **Online:** Free Dictionary API - https://dictionaryapi.dev/
+            ## Changelog
 
-          ## Support
+            ${{ steps.info.outputs.changelog }}
 
-          - **Issues:** https://github.com/ChidcGithub/HyperDict/issues
-          - **Source Code:** https://github.com/ChidcGithub/HyperDict
-          - **Documentation:** https://github.com/ChidcGithub/HyperDict/blob/main/README.md
+            ## Features
 
-          ## Changelog
+            - Offline dictionary with 3.77M+ English-Chinese entries (ECDICT)
+            - Online API integration with intelligent caching (7-day validity)
+            - Material Design 3 Expressive interface with smooth animations
+            - Real-time search suggestions and auto-completion
+            - Dark mode support with dynamic color system
 
-          Full changelog: https://github.com/ChidcGithub/HyperDict/commits/${{ steps.version.outputs.tag_name }}
+            ## Requirements
 
-          ---
+            - Android 8.0 (API 26) or higher
+            - ~850 MB storage space
 
-          Built with GitHub Actions | Commit: ${{ steps.commit.outputs.short_sha }}
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            ## Installation
+
+            1. Download the APK file below
+            2. Enable "Install from Unknown Sources" in Android settings
+            3. Install the APK and launch HyperDict
+
+            ---
+
+            **Full changelog:** https://github.com/ChidcGithub/HyperDict/compare/${{ steps.info.outputs.last_tag }}...v${{ steps.info.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
