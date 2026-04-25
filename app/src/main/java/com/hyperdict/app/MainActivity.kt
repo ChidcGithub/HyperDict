@@ -17,6 +17,15 @@ import com.hyperdict.app.ui.viewmodel.DictionaryViewModel
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Set up global crash handler
+        Thread.setDefaultUncaughtExceptionHandler(CrashHandler(this))
+
+        // Clear crash report on successful launch
+        if (!CrashHandler.hasPendingCrash(this)) {
+            CrashHandler.clearCrashReport(this)
+        }
+
         enableEdgeToEdge()
 
         val repository = ServiceLocator.getRepository(this)

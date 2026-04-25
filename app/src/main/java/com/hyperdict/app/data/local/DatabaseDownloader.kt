@@ -106,10 +106,23 @@ object DatabaseDownloader {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to download database", e)
             dbFile.delete()
+            val errorMessage = buildString {
+                append(e.message ?: "Unknown error")
+                if (e.cause != null) {
+                    append("\nCaused by: ${e.cause?.message}")
+                }
+                // Add helpful context based on exception type
+                when (e) {
+                    is java.net.SocketTimeoutException -> append("\n\nConnection timed out. Please check your network.")
+                    is java.net.UnknownHostException -> append("\n\nCannot reach server. Check internet connection.")
+                    is java.io.IOException -> append("\n\nNetwork error: ${e.message}")
+                    else -> {}
+                }
+            }
             emit(
                 DownloadProgress(
                     status = DownloadProgress.Status.FAILED,
-                    error = e.message ?: "Unknown error occurred"
+                    error = errorMessage
                 )
             )
         } finally {
