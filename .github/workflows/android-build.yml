@@ -34,7 +34,7 @@ jobs:
         id: info
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
-          VERSION=$(grep 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+          VERSION=$(grep '^\s*versionName\s*=' app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
           BUILD_DATE=$(date +'%Y-%m-%d %H:%M:%S UTC')
           echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -135,7 +135,7 @@ jobs:
         id: info
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
-          VERSION=$(grep 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+          VERSION=$(grep '^\s*versionName\s*=' app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
           BUILD_DATE=$(date +'%Y-%m-%d %H:%M:%S UTC')
           COMMIT_SUBJECT=$(git log -1 --pretty=format:"%s")
           {
@@ -213,7 +213,7 @@ jobs:
         id: info
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
-          VERSION=$(grep 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+          VERSION=$(grep '^\s*versionName\s*=' app/build.gradle.kts | head -1 | sed 's/.*"\(.*\)".*/\1/')
           BUILD_DATE=$(date +'%Y-%m-%d %H:%M:%S UTC')
           echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
