@@ -30,7 +30,7 @@ fun WordDetailScreen(
 
         WordHeader(definition)
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         definition.meanings.forEachIndexed { index, meaning ->
             AnimatedVisibility(
@@ -50,7 +50,7 @@ fun WordDetailScreen(
             ) {
                 MeaningSection(meaning)
             }
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -61,7 +61,7 @@ fun WordDetailScreen(
 private fun WordHeader(definition: WordDefinition) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
+        shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         ),
@@ -90,7 +90,7 @@ private fun WordHeader(definition: WordDefinition) {
             if (!definition.phoneticUk.isNullOrBlank() || !definition.phoneticUs.isNullOrBlank()) {
                 Row(
                     modifier = Modifier.padding(top = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(20.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     if (!definition.phoneticUk.isNullOrBlank()) {
                         PhoneticChip("UK", definition.phoneticUk)
@@ -124,7 +124,7 @@ private fun PhoneticChip(label: String, phonetic: String) {
             Text(
                 text = phonetic,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -136,25 +136,27 @@ private fun MeaningSection(meaning: Meaning) {
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier.padding(20.dp)
         ) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.secondaryContainer
-            ) {
-                Text(
-                    text = meaning.partOfSpeech,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
+            SuggestionChip(
+                onClick = { },
+                label = {
+                    Text(
+                        text = meaning.partOfSpeech,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                colors = SuggestionChipDefaults.suggestionChipColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    labelColor = MaterialTheme.colorScheme.onSecondaryContainer
                 )
-            }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -164,26 +166,19 @@ private fun MeaningSection(meaning: Meaning) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.Top
                 ) {
-                    Surface(
-                        shape = MaterialTheme.shapes.small,
+                    Text(
+                        text = "${index + 1}.",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 4.dp)
-                    ) {
-                        Text(
-                            text = "${index + 1}",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = entry.definition,
                             style = MaterialTheme.typography.bodyLarge,
-                            lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         if (!entry.example.isNullOrBlank()) {
@@ -207,7 +202,7 @@ private fun MeaningSection(meaning: Meaning) {
                 }
 
                 if (index < meaning.definitions.size - 1) {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
         }
