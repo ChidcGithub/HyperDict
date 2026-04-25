@@ -11,6 +11,7 @@ import com.hyperdict.app.data.local.DownloadProgress
 import com.hyperdict.app.data.local.WordSuggestion
 import com.hyperdict.app.data.model.WordDefinition
 import com.hyperdict.app.data.repository.WordRepository
+import com.hyperdict.app.data.settings.AppSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -26,10 +27,20 @@ sealed interface UiState {
     data class Error(val message: String) : UiState
 }
 
+sealed interface Screen {
+    object Home : Screen
+    object Settings : Screen
+}
+
 class DictionaryViewModel(
     private val repository: WordRepository,
     private val context: Context
 ) : ViewModel() {
+
+    val settings = AppSettings(context)
+
+    var currentScreen by mutableStateOf<Screen>(Screen.Home)
+        private set
 
     var uiState by mutableStateOf<UiState>(UiState.Idle)
         private set
@@ -51,10 +62,22 @@ class DictionaryViewModel(
     private var searchJob: Job? = null
     private var suggestionJob: Job? = null
 
+    fun navigateTo(screen: Screen) {
+        currentScreen = screen
+    }
+
+    fun goBack() {
+        if (currentScreen != Screen.Home) {
+            currentScreen = Screen.Home
+        }
+    }
+
     fun onQueryChange(query: String) {
         searchQuery = query
         // Update suggestions as user types
-        updateSuggestions(query)
+        if (settings.autoSearch) {
+            updateSuggestions(query)
+        }
     }
 
     private fun updateSuggestions(query: String) {

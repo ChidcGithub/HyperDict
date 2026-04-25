@@ -40,7 +40,19 @@ import com.hyperdict.app.ui.theme.metro_purple
 import com.hyperdict.app.ui.theme.metro_red
 import com.hyperdict.app.ui.theme.metro_teal
 import com.hyperdict.app.ui.viewmodel.DictionaryViewModel
+import com.hyperdict.app.ui.viewmodel.Screen
 import com.hyperdict.app.ui.viewmodel.UiState
+
+@Composable
+fun AppNavigation(viewModel: DictionaryViewModel) {
+    when (viewModel.currentScreen) {
+        Screen.Home -> HomeScreen(viewModel = viewModel)
+        Screen.Settings -> SettingsScreen(
+            viewModel = viewModel,
+            onBack = { viewModel.goBack() }
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -147,9 +159,7 @@ fun HomeScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MetroTopBar(viewModel: DictionaryViewModel) {
-    Surface(
-        tonalElevation = 2.dp
-    ) {
+    Surface(tonalElevation = 2.dp) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -164,16 +174,31 @@ private fun MetroTopBar(viewModel: DictionaryViewModel) {
                 color = MaterialTheme.colorScheme.primary
             )
 
-            when (viewModel.uiState) {
-                is UiState.Success -> {
-                    val isOffline = (viewModel.uiState as UiState.Success).isOffline
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Online/Offline indicator
+                when (viewModel.uiState) {
+                    is UiState.Success -> {
+                        val isOffline = (viewModel.uiState as UiState.Success).isOffline
+                        Icon(
+                            imageVector = if (isOffline) Icons.Outlined.CloudOff else Icons.Default.Cloud,
+                            contentDescription = if (isOffline) "Offline" else "Online",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    else -> {}
+                }
+
+                // Settings button
+                IconButton(onClick = { viewModel.navigateTo(Screen.Settings) }) {
                     Icon(
-                        imageVector = if (isOffline) Icons.Outlined.CloudOff else Icons.Default.Cloud,
-                        contentDescription = if (isOffline) "Offline" else "Online",
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Settings",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                else -> {}
             }
         }
     }

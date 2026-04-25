@@ -10,7 +10,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hyperdict.app.di.ServiceLocator
-import com.hyperdict.app.ui.screens.HomeScreen
+import com.hyperdict.app.ui.screens.AppNavigation
 import com.hyperdict.app.ui.theme.HyperDictTheme
 import com.hyperdict.app.ui.viewmodel.DictionaryViewModel
 
@@ -31,7 +31,11 @@ class MainActivity : ComponentActivity() {
         val repository = ServiceLocator.getRepository(this)
 
         setContent {
-            HyperDictTheme {
+            val settings = com.hyperdict.app.data.settings.AppSettings(this)
+            HyperDictTheme(
+                darkTheme = settings.darkTheme,
+                dynamicColor = settings.dynamicColor
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -39,7 +43,7 @@ class MainActivity : ComponentActivity() {
                     val viewModel: DictionaryViewModel = viewModel(
                         factory = DictionaryViewModelFactory(repository, this)
                     )
-                    HomeScreen(viewModel = viewModel)
+                    AppNavigation(viewModel = viewModel)
                 }
             }
         }
