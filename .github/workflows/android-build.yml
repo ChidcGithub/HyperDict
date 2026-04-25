@@ -45,10 +45,8 @@ jobs:
 
     - name: Rename APKs with commit hash
       run: |
-        cd app/build/outputs/apk/debug
-        mv app-debug.apk HyperDict-v0.0.1+${{ steps.commit.outputs.short_sha }}-debug.apk
-        cd ../release
-        mv app-release-unsigned.apk HyperDict-v0.0.1+${{ steps.commit.outputs.short_sha }}-release.apk
+        find app/build/outputs/apk/debug -name "*.apk" -exec mv {} app/build/outputs/apk/debug/HyperDict-v0.0.1+${{ steps.commit.outputs.short_sha }}-debug.apk \;
+        find app/build/outputs/apk/release -name "*.apk" -exec mv {} app/build/outputs/apk/release/HyperDict-v0.0.1+${{ steps.commit.outputs.short_sha }}-release.apk \;
 
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
