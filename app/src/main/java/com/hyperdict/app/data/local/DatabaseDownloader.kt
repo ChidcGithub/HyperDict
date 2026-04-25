@@ -21,7 +21,7 @@ private const val TAG = "DatabaseDownloader"
 // ECDICT - https://github.com/skywind3000/ECDICT
 private const val DATABASE_ZIP_URL = "https://github.com/skywind3000/ECDICT/releases/download/1.0.28/ecdict-sqlite-28.zip"
 private const val DATABASE_NAME = "ecdict.db"
-private const val DATABASE_FILE_IN_ZIP = "ecdict.db"
+private const val DATABASE_FILE_IN_ZIP = "stardict.db"
 private const val TEMP_DOWNLOAD_FILE = "ecdict.db.download"
 
 data class DownloadProgress(
