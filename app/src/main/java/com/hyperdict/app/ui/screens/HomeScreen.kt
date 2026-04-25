@@ -67,6 +67,7 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            @OptIn(ExperimentalComposeUiApi::class)
             val keyboardController = LocalSoftwareKeyboardController.current
 
             OutlinedTextField(
