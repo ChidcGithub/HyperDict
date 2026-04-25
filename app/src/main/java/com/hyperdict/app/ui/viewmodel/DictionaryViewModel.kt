@@ -11,8 +11,10 @@ import com.hyperdict.app.data.local.DownloadProgress
 import com.hyperdict.app.data.local.WordSuggestion
 import com.hyperdict.app.data.model.WordDefinition
 import com.hyperdict.app.data.repository.WordRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed interface UiState {
     object Idle : UiState
@@ -57,7 +59,11 @@ class DictionaryViewModel(
             return
         }
 
-        suggestions = repository.getSuggestions(query, limit = 10)
+        viewModelScope.launch {
+            suggestions = withContext(Dispatchers.IO) {
+                repository.getSuggestions(query, limit = 10)
+            }
+        }
     }
 
     fun selectSuggestion(suggestion: WordSuggestion) {
