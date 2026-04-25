@@ -16,6 +16,7 @@ import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -27,7 +28,7 @@ import com.hyperdict.app.data.local.WordSuggestion
 import com.hyperdict.app.ui.viewmodel.DictionaryViewModel
 import com.hyperdict.app.ui.viewmodel.UiState
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun HomeScreen(
     viewModel: DictionaryViewModel
@@ -95,7 +96,6 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            @OptIn(ExperimentalComposeUiApi::class)
             val keyboardController = LocalSoftwareKeyboardController.current
 
             SearchField(
