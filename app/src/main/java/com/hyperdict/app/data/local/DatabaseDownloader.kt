@@ -102,8 +102,8 @@ object DatabaseDownloader {
 
             inputStream = connection.inputStream
 
-            // Use RandomAccessFile for resume support
-            val outputStream = FileOutputStream(tempFile, append = downloadedBytes > 0)
+            // Use FileOutputStream with append support for resume
+            val outputStream = FileOutputStream(tempFile, downloadedBytes > 0)
 
             // Use ZipInputStream only for fresh downloads; for resume, we need to handle differently
             // Since ZIP doesn't support resume well, we'll download the full ZIP to temp first
