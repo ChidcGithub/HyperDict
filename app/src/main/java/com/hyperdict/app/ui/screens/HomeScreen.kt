@@ -431,7 +431,7 @@ private fun DatabaseDownloadingScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 LinearProgressIndicator(
-                    progress = { progress.percentage / 100f },
+                    progress = progress.percentage / 100f,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Text(
