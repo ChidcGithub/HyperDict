@@ -5,6 +5,7 @@ import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.PrintWriter
@@ -19,6 +20,7 @@ private const val TAG = "DatabaseDownloader"
 private const val DATABASE_ZIP_URL = "https://github.com/skywind3000/ECDICT/releases/download/1.0.28/ecdict-sqlite-28.zip"
 private const val DATABASE_NAME = "ecdict.db"
 private const val DATABASE_FILE_IN_ZIP = "ecdict.db"
+private const val TEMP_DOWNLOAD_FILE = "ecdict.db.download"
 
 data class DownloadProgress(
     val status: Status,
@@ -40,12 +42,17 @@ object DatabaseDownloader {
         return context.getDatabasePath(DATABASE_NAME)
     }
 
+    fun getTempDownloadPath(context: Context): File {
+        return File(context.filesDir, TEMP_DOWNLOAD_FILE)
+    }
+
     fun isDatabaseDownloaded(context: Context): Boolean {
         return getDatabasePath(context).exists()
     }
 
     fun downloadDatabase(context: Context): Flow<DownloadProgress> = flow {
         val dbFile = getDatabasePath(context)
+        val tempFile = getTempDownloadPath(context)
 
         if (dbFile.exists()) {
             emit(DownloadProgress(DownloadProgress.Status.SUCCESS))
@@ -64,43 +71,87 @@ object DatabaseDownloader {
             connection = url.openConnection() as HttpURLConnection
             connection.connectTimeout = 120000
             connection.readTimeout = 120000
+
+            // Support resume: check if we have a partial download
+            var downloadedBytes = 0L
+            if (tempFile.exists()) {
+                downloadedBytes = tempFile.length()
+                connection.setRequestProperty("Range", "bytes=$downloadedBytes-")
+                Log.d(TAG, "Resuming download from byte $downloadedBytes")
+            }
+
             connection.connect()
 
             val responseCode = connection.responseCode
-            if (responseCode != HttpURLConnection.HTTP_OK) {
+            // Accept both 200 (full download) and 206 (partial content/resume)
+            if (responseCode != HttpURLConnection.HTTP_OK && responseCode != HttpURLConnection.HTTP_PARTIAL) {
                 throw java.io.IOException("Server returned HTTP $responseCode")
             }
 
             val totalBytes = connection.contentLengthLong
-            if (totalBytes <= 0) {
+            val actualTotalBytes = if (downloadedBytes > 0) {
+                // When resuming, totalBytes is the remaining bytes, so add downloadedBytes
+                if (totalBytes > 0) downloadedBytes + totalBytes else 0
+            } else {
+                totalBytes
+            }
+
+            if (actualTotalBytes <= 0) {
                 Log.w(TAG, "Server did not return content length")
             }
+
             inputStream = connection.inputStream
 
-            // Use ZipInputStream to extract the database file
-            val zipInputStream = ZipInputStream(inputStream)
-            val outputStream = FileOutputStream(dbFile)
+            // Use RandomAccessFile for resume support
+            val outputStream = FileOutputStream(tempFile, append = downloadedBytes > 0)
+
+            // Use ZipInputStream only for fresh downloads; for resume, we need to handle differently
+            // Since ZIP doesn't support resume well, we'll download the full ZIP to temp first
+            // then extract on completion
+            val buffer = ByteArray(65536) // Larger buffer for better performance
+            var bytesRead: Int
+            var totalBytesRead = downloadedBytes
+
+            while (inputStream.read(buffer).also { bytesRead = it } > 0) {
+                outputStream.write(buffer, 0, bytesRead)
+                totalBytesRead += bytesRead
+
+                emit(
+                    DownloadProgress(
+                        status = DownloadProgress.Status.DOWNLOADING,
+                        bytesDownloaded = totalBytesRead,
+                        totalBytes = actualTotalBytes
+                    )
+                )
+            }
+
+            outputStream.flush()
+            outputStream.close()
+            inputStream.close()
+
+            // Extract the database from the downloaded ZIP
+            emit(
+                DownloadProgress(
+                    status = DownloadProgress.Status.DOWNLOADING,
+                    bytesDownloaded = totalBytesRead,
+                    totalBytes = actualTotalBytes
+                )
+            )
+
+            // Extract ZIP
+            val zipInputStream = ZipInputStream(FileInputStream(tempFile))
+            val dbOutputStream = FileOutputStream(dbFile)
 
             var entryFound = false
             var entry = zipInputStream.nextEntry
             while (entry != null) {
                 val entryName = entry.name.substringAfterLast('/').substringAfterLast('\\')
                 if (entryName == DATABASE_FILE_IN_ZIP) {
-                    val buffer = ByteArray(8192)
-                    var bytesRead: Int
-                    var totalBytesRead = 0L
+                    val extractBuffer = ByteArray(65536)
+                    var extractBytesRead: Int
 
-                    while (zipInputStream.read(buffer).also { bytesRead = it } > 0) {
-                        outputStream.write(buffer, 0, bytesRead)
-                        totalBytesRead += bytesRead
-
-                        emit(
-                            DownloadProgress(
-                                status = DownloadProgress.Status.DOWNLOADING,
-                                bytesDownloaded = totalBytesRead,
-                                totalBytes = totalBytes
-                            )
-                        )
+                    while (zipInputStream.read(extractBuffer).also { extractBytesRead = it } > 0) {
+                        dbOutputStream.write(extractBuffer, 0, extractBytesRead)
                     }
                     entryFound = true
                     break
@@ -109,15 +160,18 @@ object DatabaseDownloader {
             }
 
             if (!entryFound) {
-                outputStream.close()
+                dbOutputStream.close()
                 dbFile.delete()
                 throw java.io.IOException("Database file '$DATABASE_FILE_IN_ZIP' not found in ZIP archive")
             }
 
-            outputStream.flush()
-            outputStream.close()
+            dbOutputStream.flush()
+            dbOutputStream.close()
             zipInputStream.closeEntry()
             zipInputStream.close()
+
+            // Clean up temp file
+            tempFile.delete()
 
             // Verify the downloaded file
             if (!dbFile.exists() || dbFile.length() == 0L) {
@@ -129,7 +183,10 @@ object DatabaseDownloader {
 
         } catch (e: Throwable) {
             Log.e(TAG, "Failed to download database", e)
-            dbFile.delete()
+            // Don't delete temp file - allow resume on retry
+            if (dbFile.exists()) {
+                dbFile.delete()
+            }
             val errorMessage = buildString {
                 val message = e.message
                 if (!message.isNullOrBlank()) {
@@ -140,7 +197,7 @@ object DatabaseDownloader {
                 if (e.cause != null) {
                     append("\nCaused by: ${e.cause?.message}")
                 }
-                // Add helpfulcontext based on exception type
+                // Add helpful context based on exception type
                 when (e) {
                     is java.net.SocketTimeoutException -> append("\n\nConnection timed out. Please check your network.")
                     is java.net.UnknownHostException -> append("\n\nCannot reach server. Check internet connection.")

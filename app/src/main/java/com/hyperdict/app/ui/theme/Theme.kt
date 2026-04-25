@@ -87,7 +87,8 @@ fun HyperDictTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = MetroTypography,
+        shapes = MetroShapes,
         content = content
     )
 }

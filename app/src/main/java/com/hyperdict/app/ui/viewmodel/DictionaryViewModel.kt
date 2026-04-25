@@ -12,6 +12,7 @@ import com.hyperdict.app.data.local.WordSuggestion
 import com.hyperdict.app.data.model.WordDefinition
 import com.hyperdict.app.data.repository.WordRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -47,6 +48,9 @@ class DictionaryViewModel(
     )
         private set
 
+    private var searchJob: Job? = null
+    private var suggestionJob: Job? = null
+
     fun onQueryChange(query: String) {
         searchQuery = query
         // Update suggestions as user types
@@ -59,9 +63,16 @@ class DictionaryViewModel(
             return
         }
 
-        viewModelScope.launch {
-            suggestions = withContext(Dispatchers.IO) {
-                repository.getSuggestions(query, limit = 10)
+        // Cancel previous suggestion request to avoid race conditions
+        suggestionJob?.cancel()
+        suggestionJob = viewModelScope.launch {
+            try {
+                suggestions = withContext(Dispatchers.IO) {
+                    repository.getSuggestions(query, limit = 10)
+                }
+            } catch (e: Exception) {
+                // Silently fail for suggestions
+                suggestions = emptyList()
             }
         }
     }
@@ -72,41 +83,71 @@ class DictionaryViewModel(
     }
 
     fun searchWord(word: String) {
-        if (word.isBlank()) {
+        val trimmedWord = word.trim()
+        if (trimmedWord.isBlank()) {
             uiState = UiState.Idle
             suggestions = emptyList()
             return
         }
 
-        viewModelScope.launch {
+        // Cancel previous search to avoid race conditions
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
             uiState = UiState.Loading
             suggestions = emptyList()
 
-            repository.lookupWord(word).fold(
-                onSuccess = { definition ->
-                    // Check if it's from offline dictionary (has "翻译" meaning)
-                    val isOffline = definition.meanings.any { it.partOfSpeech == "翻译" }
-                    uiState = UiState.Success(definition, isOffline)
-                    searchQuery = definition.word
-                },
-                onFailure = { error ->
-                    uiState = UiState.Error(error.message ?: "Unknown error occurred")
+            try {
+                repository.lookupWord(trimmedWord).fold(
+                    onSuccess = { definition ->
+                        // Check if it's from offline dictionary (has "翻译" meaning)
+                        val isOffline = definition.meanings.any { it.partOfSpeech == "翻译" }
+                        uiState = UiState.Success(definition, isOffline)
+                        searchQuery = definition.word
+                    },
+                    onFailure = { error ->
+                        uiState = UiState.Error(error.message ?: "Unknown error occurred")
+                    }
+                )
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) {
+                    throw e
                 }
-            )
+                uiState = UiState.Error(e.message ?: "Search failed")
+            }
         }
     }
 
     fun startDatabaseDownload() {
         viewModelScope.launch {
-            DatabaseDownloader.downloadDatabase(context).collectLatest { progress ->
-                downloadProgress = progress
+            try {
+                DatabaseDownloader.downloadDatabase(context).collectLatest { progress ->
+                    downloadProgress = progress
+                }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) {
+                    throw e
+                }
+                downloadProgress = DownloadProgress(
+                    status = DownloadProgress.Status.FAILED,
+                    error = "Download failed: ${e.message}"
+                )
             }
         }
     }
 
     fun clearCache() {
         viewModelScope.launch {
-            repository.clearCache()
+            try {
+                repository.clearCache()
+            } catch (e: Exception) {
+                // Silently fail
+            }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        searchJob?.cancel()
+        suggestionJob?.cancel()
     }
 }
