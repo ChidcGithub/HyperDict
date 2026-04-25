@@ -2,11 +2,6 @@ package com.hyperdict.app.data.settings
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 
 class AppSettings(context: Context) {
 
@@ -16,78 +11,78 @@ class AppSettings(context: Context) {
     )
 
     // Search settings
-    var autoSearch by mutableStateOf(prefs.getBoolean(KEY_AUTO_SEARCH, true))
+    var autoSearch: Boolean = prefs.getBoolean(KEY_AUTO_SEARCH, true)
         private set
 
-    var searchHistoryLimit by mutableIntStateOf(prefs.getInt(KEY_SEARCH_HISTORY_LIMIT, 50))
+    var searchHistoryLimit: Int = prefs.getInt(KEY_SEARCH_HISTORY_LIMIT, 50)
         private set
 
     // Display settings
-    var darkTheme by mutableStateOf(prefs.getBoolean(KEY_DARK_THEME, false))
+    var darkTheme: Boolean = prefs.getBoolean(KEY_DARK_THEME, false)
         private set
 
-    var dynamicColor by mutableStateOf(prefs.getBoolean(KEY_DYNAMIC_COLOR, true))
+    var dynamicColor: Boolean = prefs.getBoolean(KEY_DYNAMIC_COLOR, true)
         private set
 
-    var fontSizeScale by mutableFloatStateOf(prefs.getFloat(KEY_FONT_SIZE_SCALE, 1.0f))
+    var fontSizeScale: Float = prefs.getFloat(KEY_FONT_SIZE_SCALE, 1.0f)
         private set
 
     // Dictionary settings
-    var preferOffline by mutableStateOf(prefs.getBoolean(KEY_PREFER_OFFLINE, true))
+    var preferOffline: Boolean = prefs.getBoolean(KEY_PREFER_OFFLINE, true)
         private set
 
-    var showUkPhonetic by mutableStateOf(prefs.getBoolean(KEY_SHOW_UK_PHONETIC, true))
+    var showUkPhonetic: Boolean = prefs.getBoolean(KEY_SHOW_UK_PHONETIC, true)
         private set
 
-    var showUsPhonetic by mutableStateOf(prefs.getBoolean(KEY_SHOW_US_PHONETIC, true))
+    var showUsPhonetic: Boolean = prefs.getBoolean(KEY_SHOW_US_PHONETIC, true)
         private set
 
     // Network settings
-    var wifiOnlyDownload by mutableStateOf(prefs.getBoolean(KEY_WIFI_ONLY_DOWNLOAD, true))
+    var wifiOnlyDownload: Boolean = prefs.getBoolean(KEY_WIFI_ONLY_DOWNLOAD, true)
         private set
 
     // Save settings
-    fun setAutoSearch(value: Boolean) {
+    fun updateAutoSearch(value: Boolean) {
         autoSearch = value
         prefs.edit().putBoolean(KEY_AUTO_SEARCH, value).apply()
     }
 
-    fun setSearchHistoryLimit(value: Int) {
+    fun updateSearchHistoryLimit(value: Int) {
         searchHistoryLimit = value
         prefs.edit().putInt(KEY_SEARCH_HISTORY_LIMIT, value).apply()
     }
 
-    fun setDarkTheme(value: Boolean) {
+    fun updateDarkTheme(value: Boolean) {
         darkTheme = value
         prefs.edit().putBoolean(KEY_DARK_THEME, value).apply()
     }
 
-    fun setDynamicColor(value: Boolean) {
+    fun updateDynamicColor(value: Boolean) {
         dynamicColor = value
         prefs.edit().putBoolean(KEY_DYNAMIC_COLOR, value).apply()
     }
 
-    fun setFontSizeScale(value: Float) {
+    fun updateFontSizeScale(value: Float) {
         fontSizeScale = value.coerceIn(0.8f, 1.5f)
         prefs.edit().putFloat(KEY_FONT_SIZE_SCALE, fontSizeScale).apply()
     }
 
-    fun setPreferOffline(value: Boolean) {
+    fun updatePreferOffline(value: Boolean) {
         preferOffline = value
         prefs.edit().putBoolean(KEY_PREFER_OFFLINE, value).apply()
     }
 
-    fun setShowUkPhonetic(value: Boolean) {
+    fun updateShowUkPhonetic(value: Boolean) {
         showUkPhonetic = value
         prefs.edit().putBoolean(KEY_SHOW_UK_PHONETIC, value).apply()
     }
 
-    fun setShowUsPhonetic(value: Boolean) {
+    fun updateShowUsPhonetic(value: Boolean) {
         showUsPhonetic = value
         prefs.edit().putBoolean(KEY_SHOW_US_PHONETIC, value).apply()
     }
 
-    fun setWifiOnlyDownload(value: Boolean) {
+    fun updateWifiOnlyDownload(value: Boolean) {
         wifiOnlyDownload = value
         prefs.edit().putBoolean(KEY_WIFI_ONLY_DOWNLOAD, value).apply()
     }

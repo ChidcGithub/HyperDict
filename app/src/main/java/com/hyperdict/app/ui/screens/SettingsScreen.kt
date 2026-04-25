@@ -73,14 +73,14 @@ fun SettingsScreen(
                     title = "Auto Search",
                     description = "Search automatically as you type",
                     checked = settings.autoSearch,
-                    onCheckedChange = { settings.setAutoSearch(it) }
+                    onCheckedChange = { settings.updateAutoSearch(it) }
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 SearchHistoryLimitSetting(
                     currentLimit = settings.searchHistoryLimit,
-                    onLimitChange = { settings.setSearchHistoryLimit(it) }
+                    onLimitChange = { settings.updateSearchHistoryLimit(it) }
                 )
             }
 
@@ -96,7 +96,7 @@ fun SettingsScreen(
                     title = "Dark Theme",
                     description = "Use dark color scheme",
                     checked = settings.darkTheme,
-                    onCheckedChange = { settings.setDarkTheme(it) }
+                    onCheckedChange = { settings.updateDarkTheme(it) }
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -105,14 +105,14 @@ fun SettingsScreen(
                     title = "Dynamic Color",
                     description = "Use Material You dynamic colors (Android 12+)",
                     checked = settings.dynamicColor,
-                    onCheckedChange = { settings.setDynamicColor(it) }
+                    onCheckedChange = { settings.updateDynamicColor(it) }
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 FontSizeSetting(
                     currentScale = settings.fontSizeScale,
-                    onScaleChange = { settings.setFontSizeScale(it) }
+                    onScaleChange = { settings.updateFontSizeScale(it) }
                 )
             }
 
@@ -128,7 +128,7 @@ fun SettingsScreen(
                     title = "Prefer Offline",
                     description = "Use offline dictionary when available",
                     checked = settings.preferOffline,
-                    onCheckedChange = { settings.setPreferOffline(it) }
+                    onCheckedChange = { settings.updatePreferOffline(it) }
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -137,7 +137,7 @@ fun SettingsScreen(
                     title = "Show UK Phonetic",
                     description = "Display British pronunciation phonetics",
                     checked = settings.showUkPhonetic,
-                    onCheckedChange = { settings.setShowUkPhonetic(it) }
+                    onCheckedChange = { settings.updateShowUkPhonetic(it) }
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -146,7 +146,7 @@ fun SettingsScreen(
                     title = "Show US Phonetic",
                     description = "Display American pronunciation phonetics",
                     checked = settings.showUsPhonetic,
-                    onCheckedChange = { settings.setShowUsPhonetic(it) }
+                    onCheckedChange = { settings.updateShowUsPhonetic(it) }
                 )
             }
 
@@ -162,7 +162,7 @@ fun SettingsScreen(
                     title = "WiFi Only Download",
                     description = "Only download database over WiFi connection",
                     checked = settings.wifiOnlyDownload,
-                    onCheckedChange = { settings.setWifiOnlyDownload(it) }
+                    onCheckedChange = { settings.updateWifiOnlyDownload(it) }
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
