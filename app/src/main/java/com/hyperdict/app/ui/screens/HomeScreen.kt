@@ -69,20 +69,32 @@ fun HomeScreen(
     val progress = viewModel.downloadProgress
     when (progress.status) {
         DownloadProgress.Status.NOT_STARTED -> {
-            MetroDownloadRequiredScreen(
-                onStartDownload = { viewModel.startDatabaseDownload() }
-            )
+            Scaffold { paddingValues ->
+                Box(modifier = Modifier.padding(paddingValues)) {
+                    MetroDownloadRequiredScreen(
+                        onStartDownload = { viewModel.startDatabaseDownload() }
+                    )
+                }
+            }
             return
         }
         DownloadProgress.Status.DOWNLOADING -> {
-            MetroDownloadingScreen(progress = progress)
+            Scaffold { paddingValues ->
+                Box(modifier = Modifier.padding(paddingValues)) {
+                    MetroDownloadingScreen(progress = progress)
+                }
+            }
             return
         }
         DownloadProgress.Status.FAILED -> {
-            MetroDownloadFailedScreen(
-                error = progress.error,
-                onRetry = { viewModel.startDatabaseDownload() }
-            )
+            Scaffold { paddingValues ->
+                Box(modifier = Modifier.padding(paddingValues)) {
+                    MetroDownloadFailedScreen(
+                        error = progress.error,
+                        onRetry = { viewModel.startDatabaseDownload() }
+                    )
+                }
+            }
             return
         }
         DownloadProgress.Status.SUCCESS -> {
@@ -177,10 +189,17 @@ private fun MetroTopBar(viewModel: DictionaryViewModel) {
                 .padding(start = 16.dp, end = 16.dp, top = statusBarPadding + 16.dp, bottom = 16.dp)
                 .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
                 .pointerInput(Unit) {
-                    detectDragGestures { change, dragAmount ->
+                    detectDragGestures(
+                        onDragEnd = {
+                            // Snap back to original position
+                            offsetX = 0f
+                            offsetY = 0f
+                        }
+                    ) { change, dragAmount ->
                         change.consume()
-                        offsetX += dragAmount.x
-                        offsetY += dragAmount.y
+                        // Constrain drag to keep title bar visible
+                        offsetX = (offsetX + dragAmount.x).coerceIn(-100f, 100f)
+                        offsetY = (offsetY + dragAmount.y).coerceIn(-50f, 50f)
                     }
                 },
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -200,10 +219,10 @@ private fun MetroTopBar(viewModel: DictionaryViewModel) {
                 // Online/Offline indicator
                 when (viewModel.uiState) {
                     is UiState.Success -> {
-                        val isOffline = (viewModel.uiState as UiState.Success).isOffline
+                        val successState = viewModel.uiState as UiState.Success
                         Icon(
-                            imageVector = if (isOffline) Icons.Outlined.CloudOff else Icons.Default.Cloud,
-                            contentDescription = if (isOffline) "Offline" else "Online",
+                            imageVector = if (successState.isOffline) Icons.Outlined.CloudOff else Icons.Default.Cloud,
+                            contentDescription = if (successState.isOffline) "Offline" else "Online",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -313,8 +332,8 @@ private fun MetroSuggestionsGrid(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(suggestions) { suggestion ->
-            val colorIndex = suggestions.indexOf(suggestion) % tileColors.size
+        itemsIndexed(suggestions) { index, suggestion ->
+            val colorIndex = index % tileColors.size
             MetroSuggestionTile(
                 suggestion = suggestion,
                 tileColor = tileColors[colorIndex],
@@ -800,8 +819,8 @@ private fun MetroDownloadFailedScreen(
 private fun formatBytes(bytes: Long): String {
     return when {
         bytes < 1024 -> "$bytes B"
-        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-        bytes < 1024 * 1024 * 1024 -> "${bytes / (1024 * 1024)} MB"
-        else -> "${bytes / (1024 * 1024 * 1024)} GB"
+        bytes < 1024 * 1024 -> String.format("%.1f KB", bytes.toDouble() / 1024)
+        bytes < 1024 * 1024 * 1024 -> String.format("%.1f MB", bytes.toDouble() / (1024 * 1024))
+        else -> String.format("%.2f GB", bytes.toDouble() / (1024 * 1024 * 1024))
     }
 }

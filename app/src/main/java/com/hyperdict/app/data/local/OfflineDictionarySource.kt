@@ -66,7 +66,8 @@ class OfflineDictionarySource(
             phonetic = phonetic,
             phoneticUs = null,
             phoneticUk = null,
-            meanings = finalMeanings
+            meanings = finalMeanings,
+            isOffline = true
         )
     }
 

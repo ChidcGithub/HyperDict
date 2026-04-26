@@ -21,8 +21,8 @@ import kotlinx.coroutines.withContext
 sealed interface UiState {
     object Idle : UiState
     object Loading : UiState
-    data class Success(val definition: WordDefinition, val isOffline: Boolean) : UiState {
-        constructor(definition: WordDefinition) : this(definition, true)
+    data class Success(val definition: WordDefinition) : UiState {
+        val isOffline: Boolean get() = definition.isOffline
     }
     data class Error(val message: String) : UiState
 }
@@ -122,9 +122,7 @@ class DictionaryViewModel(
             try {
                 repository.lookupWord(trimmedWord).fold(
                     onSuccess = { definition ->
-                        // Check if it's from offline dictionary (has "翻译" meaning)
-                        val isOffline = definition.meanings.any { it.partOfSpeech == "翻译" }
-                        uiState = UiState.Success(definition, isOffline)
+                        uiState = UiState.Success(definition)
                         searchQuery = definition.word
                     },
                     onFailure = { error ->

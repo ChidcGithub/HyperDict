@@ -74,45 +74,34 @@ object DatabaseDownloader {
             connection.connectTimeout = 120000
             connection.readTimeout = 120000
 
-            // Support resume: check if we have a partial download
-            var downloadedBytes = 0L
+            // Note: ZIP files cannot be reliably resumed because the central directory
+            // is at the end of the archive. A partial ZIP cannot be extracted correctly.
+            // Always download fresh to ensure integrity.
             if (tempFile.exists()) {
-                downloadedBytes = tempFile.length()
-                connection.setRequestProperty("Range", "bytes=$downloadedBytes-")
-                Log.d(TAG, "Resuming download from byte $downloadedBytes")
+                Log.d(TAG, "Removing partial download for fresh start (ZIP resume not supported)")
+                tempFile.delete()
             }
 
             connection.connect()
 
             val responseCode = connection.responseCode
-            // Accept both 200 (full download) and 206 (partial content/resume)
-            if (responseCode != HttpURLConnection.HTTP_OK && responseCode != HttpURLConnection.HTTP_PARTIAL) {
+            if (responseCode != HttpURLConnection.HTTP_OK) {
                 throw java.io.IOException("Server returned HTTP $responseCode")
             }
 
             val totalBytes = connection.contentLengthLong
-            val actualTotalBytes = if (downloadedBytes > 0) {
-                // When resuming, totalBytes is the remaining bytes, so add downloadedBytes
-                if (totalBytes > 0) downloadedBytes + totalBytes else 0
-            } else {
-                totalBytes
-            }
 
-            if (actualTotalBytes <= 0) {
+            if (totalBytes <= 0) {
                 Log.w(TAG, "Server did not return content length")
             }
 
             inputStream = connection.inputStream
 
-            // Use FileOutputStream with append support for resume
-            val outputStream = FileOutputStream(tempFile, downloadedBytes > 0)
+            val outputStream = FileOutputStream(tempFile)
 
-            // Use ZipInputStream only for fresh downloads; for resume, we need to handle differently
-            // Since ZIP doesn't support resume well, we'll download the full ZIP to temp first
-            // then extract on completion
-            val buffer = ByteArray(65536) // Larger buffer for better performance
+            val buffer = ByteArray(65536)
             var bytesRead: Int
-            var totalBytesRead = downloadedBytes
+            var totalBytesRead = 0L
 
             while (inputStream.read(buffer).also { bytesRead = it } > 0) {
                 outputStream.write(buffer, 0, bytesRead)
@@ -122,7 +111,7 @@ object DatabaseDownloader {
                     DownloadProgress(
                         status = DownloadProgress.Status.DOWNLOADING,
                         bytesDownloaded = totalBytesRead,
-                        totalBytes = actualTotalBytes
+                        totalBytes = totalBytes
                     )
                 )
             }

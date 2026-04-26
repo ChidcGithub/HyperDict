@@ -5,31 +5,25 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+/**
+ * A reusable search bar component.
+ * Note: This component is currently unused; HomeScreen uses MetroSearchField instead.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchBar(
+fun DictSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val localQuery = remember { mutableStateOf(query) }
-
-    SearchBar(
-        query = localQuery.value,
-        onQueryChange = {
-            localQuery.value = it
-            onQueryChange(it)
-        },
-        onSearch = {
-            onSearch()
-        },
+    androidx.compose.material3.SearchBar(
+        query = query,
+        onQueryChange = onQueryChange,
+        onSearch = { onSearch() },
         active = false,
         onActiveChange = {},
         placeholder = { Text("Search for a word...") },
@@ -42,29 +36,7 @@ fun SearchBar(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onSearch: () -> Unit,
-    active: Boolean,
-    onActiveChange: (Boolean) -> Unit,
-    placeholder: @Composable (() -> Unit)? = null,
-    leadingIcon: @Composable (() -> Unit)? = null,
-    modifier: Modifier = Modifier
-) {
-    androidx.compose.material3.SearchBar(
-        query = query,
-        onQueryChange = onQueryChange,
-        onSearch = { onSearch() },
-        active = active,
-        onActiveChange = onActiveChange,
-        placeholder = placeholder,
-        leadingIcon = leadingIcon,
-        modifier = modifier
-    ) {}
+    ) {
+        // No suggestions dropdown content
+    }
 }

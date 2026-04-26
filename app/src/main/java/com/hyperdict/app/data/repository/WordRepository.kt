@@ -114,6 +114,7 @@ class WordRepository(
             phoneticUs = entity.phoneticUs,
             phoneticUk = entity.phoneticUk,
             meanings = meanings,
+            isOffline = false,
             cachedAt = entity.cachedAt
         )
     }

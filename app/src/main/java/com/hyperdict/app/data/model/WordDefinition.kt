@@ -6,6 +6,7 @@ data class WordDefinition(
     val phoneticUs: String?,
     val phoneticUk: String?,
     val meanings: List<Meaning>,
+    val isOffline: Boolean = false,
     val cachedAt: Long = System.currentTimeMillis()
 )
 

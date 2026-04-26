@@ -2,6 +2,9 @@ package com.hyperdict.app.data.settings
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 class AppSettings(context: Context) {
 
@@ -11,34 +14,34 @@ class AppSettings(context: Context) {
     )
 
     // Search settings
-    var autoSearch: Boolean = prefs.getBoolean(KEY_AUTO_SEARCH, true)
+    var autoSearch by mutableStateOf(prefs.getBoolean(KEY_AUTO_SEARCH, true))
         private set
 
-    var searchHistoryLimit: Int = prefs.getInt(KEY_SEARCH_HISTORY_LIMIT, 50)
+    var searchHistoryLimit by mutableStateOf(prefs.getInt(KEY_SEARCH_HISTORY_LIMIT, 50))
         private set
 
     // Display settings
-    var darkTheme: Boolean = prefs.getBoolean(KEY_DARK_THEME, false)
+    var darkTheme by mutableStateOf(prefs.getBoolean(KEY_DARK_THEME, false))
         private set
 
-    var dynamicColor: Boolean = prefs.getBoolean(KEY_DYNAMIC_COLOR, true)
+    var dynamicColor by mutableStateOf(prefs.getBoolean(KEY_DYNAMIC_COLOR, true))
         private set
 
-    var fontSizeScale: Float = prefs.getFloat(KEY_FONT_SIZE_SCALE, 1.0f)
+    var fontSizeScale by mutableStateOf(prefs.getFloat(KEY_FONT_SIZE_SCALE, 1.0f))
         private set
 
     // Dictionary settings
-    var preferOffline: Boolean = prefs.getBoolean(KEY_PREFER_OFFLINE, true)
+    var preferOffline by mutableStateOf(prefs.getBoolean(KEY_PREFER_OFFLINE, true))
         private set
 
-    var showUkPhonetic: Boolean = prefs.getBoolean(KEY_SHOW_UK_PHONETIC, true)
+    var showUkPhonetic by mutableStateOf(prefs.getBoolean(KEY_SHOW_UK_PHONETIC, true))
         private set
 
-    var showUsPhonetic: Boolean = prefs.getBoolean(KEY_SHOW_US_PHONETIC, true)
+    var showUsPhonetic by mutableStateOf(prefs.getBoolean(KEY_SHOW_US_PHONETIC, true))
         private set
 
     // Network settings
-    var wifiOnlyDownload: Boolean = prefs.getBoolean(KEY_WIFI_ONLY_DOWNLOAD, true)
+    var wifiOnlyDownload by mutableStateOf(prefs.getBoolean(KEY_WIFI_ONLY_DOWNLOAD, true))
         private set
 
     // Save settings
