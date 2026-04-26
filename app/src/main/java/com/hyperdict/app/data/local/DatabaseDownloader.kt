@@ -125,7 +125,7 @@ object DatabaseDownloader {
                 DownloadProgress(
                     status = DownloadProgress.Status.DOWNLOADING,
                     bytesDownloaded = totalBytesRead,
-                    totalBytes = actualTotalBytes
+                    totalBytes = totalBytes
                 )
             )
 
